@@ -7,6 +7,19 @@ const STRENGTH_PROMPTS: Record<Strength, string> = {
   high: 'closely matching the composition and style of',
 };
 
+const ASPECT_RATIO_DESCRIPTIONS: Record<string, string> = {
+  '1:1': 'square (1:1 aspect ratio)',
+  '16:9': 'wide landscape (16:9 aspect ratio)',
+  '9:16': 'tall portrait (9:16 aspect ratio)',
+  '4:3': 'standard landscape (4:3 aspect ratio)',
+  '3:4': 'standard portrait (3:4 aspect ratio)',
+  '3:2': 'classic photo landscape (3:2 aspect ratio)',
+  '2:3': 'classic photo portrait (2:3 aspect ratio)',
+  '4:5': 'social media portrait (4:5 aspect ratio)',
+  '5:4': 'social media landscape (5:4 aspect ratio)',
+  '21:9': 'ultrawide cinematic (21:9 aspect ratio)',
+};
+
 const MAX_RETRIES = 3;
 const RETRY_DELAYS = [2000, 4000, 6000]; // Exponential backoff
 
@@ -36,33 +49,31 @@ export class GeminiClient {
       });
     }
 
-    // Build prompt with reference hints
-    const promptWithRefs = this.buildPromptWithReferences(
-      request.prompt,
-      request.referenceImages
-    );
-
-    parts.push({ text: promptWithRefs });
+    // Build prompt with aspect ratio and reference hints
+    const promptWithContext = this.buildFullPrompt(request);
+    parts.push({ text: promptWithContext });
 
     return parts;
   }
 
-  private buildPromptWithReferences(
-    prompt: string,
-    references: ReferenceImage[]
-  ): string {
-    if (references.length === 0) {
-      return prompt;
+  private buildFullPrompt(request: GenerationRequest): string {
+    const aspectDesc = ASPECT_RATIO_DESCRIPTIONS[request.aspectRatio] || request.aspectRatio;
+
+    let prompt = `Generate a ${aspectDesc} image.\n\n${request.prompt}`;
+
+    // Add reference hints if there are reference images
+    if (request.referenceImages.length > 0) {
+      const refHints = request.referenceImages
+        .map((ref, index) => {
+          const strengthHint = STRENGTH_PROMPTS[ref.strength];
+          return `Reference image ${index + 1}: ${strengthHint}`;
+        })
+        .join('. ');
+
+      prompt = `${prompt}\n\n${refHints}`;
     }
 
-    const refHints = references
-      .map((ref, index) => {
-        const strengthHint = STRENGTH_PROMPTS[ref.strength];
-        return `Reference image ${index + 1}: ${strengthHint}`;
-      })
-      .join('. ');
-
-    return `${prompt}\n\n${refHints}`;
+    return prompt;
   }
 
   private async generateWithRetry(
@@ -71,15 +82,12 @@ export class GeminiClient {
     attempt: number = 0
   ): Promise<GenerationResult | null> {
     try {
-      // Use Gemini 2.0 Flash for image generation (supports imagen)
+      // Use Gemini 2.0 Flash for image generation
       const model = this.client.getGenerativeModel({
         model: 'gemini-2.0-flash-exp',
         generationConfig: {
-          // @ts-expect-error - these are valid for imagen but not typed
+          // @ts-expect-error - responseModalities is valid for imagen but not typed
           responseModalities: ['TEXT', 'IMAGE'],
-          // Image generation config
-          aspectRatio: request.aspectRatio,
-          imageSize: request.resolution,
         },
       });
 
