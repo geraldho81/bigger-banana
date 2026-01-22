@@ -75,8 +75,11 @@ export class GeminiClient {
       const model = this.client.getGenerativeModel({
         model: 'gemini-2.0-flash-exp',
         generationConfig: {
-          // @ts-expect-error - responseModalities is valid for imagen
+          // @ts-expect-error - these are valid for imagen but not typed
           responseModalities: ['TEXT', 'IMAGE'],
+          // Image generation config
+          aspectRatio: request.aspectRatio,
+          imageSize: request.resolution,
         },
       });
 
