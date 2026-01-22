@@ -121,7 +121,7 @@ export function downloadImage(base64Data: string, mimeType: string, filename: st
 
 export async function copyImageToClipboard(base64Data: string, mimeType: string) {
   const bytes = base64ToBytes(base64Data);
-  const blob = new Blob([bytes], { type: mimeType });
+  const blob = new Blob([bytes.buffer], { type: mimeType });
 
   try {
     await navigator.clipboard.write([
