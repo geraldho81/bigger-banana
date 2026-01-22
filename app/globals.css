@@ -1,0 +1,129 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --bg-primary: #0d0d0c;
+  --bg-secondary: #141412;
+  --bg-tertiary: #1a1917;
+  --accent-gold: #c4a574;
+  --accent-gold-hover: #d4b584;
+  --text-primary: #f5f0e6;
+  --text-secondary: #c9c4b8;
+  --text-muted: #8a857a;
+}
+
+* {
+  box-sizing: border-box;
+  padding: 0;
+  margin: 0;
+}
+
+html,
+body {
+  max-width: 100vw;
+  overflow-x: hidden;
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+}
+
+/* Scrollbar Styling */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--bg-secondary);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--text-muted);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--text-secondary);
+}
+
+/* Custom Components */
+@layer components {
+  .label-gold {
+    @apply text-xs font-medium uppercase tracking-[0.15em] text-accent-gold;
+  }
+
+  .btn-primary {
+    @apply inline-flex items-center justify-center gap-2 rounded-lg bg-accent-gold px-6 py-3 font-medium text-bg-primary transition-all hover:bg-accent-gold-hover disabled:cursor-not-allowed disabled:opacity-50;
+  }
+
+  .btn-secondary {
+    @apply inline-flex items-center justify-center gap-2 rounded-lg border border-text-muted/30 bg-transparent px-4 py-2 font-medium text-text-primary transition-all hover:border-accent-gold hover:text-accent-gold disabled:cursor-not-allowed disabled:opacity-50;
+  }
+
+  .input-base {
+    @apply w-full rounded-lg border border-text-muted/20 bg-bg-secondary px-4 py-3 text-text-primary placeholder-text-muted transition-all focus:border-accent-gold focus:outline-none focus:ring-1 focus:ring-accent-gold;
+  }
+
+  .card {
+    @apply rounded-xl border border-text-muted/10 bg-bg-secondary/50 p-4;
+  }
+
+  .shimmer-loading {
+    @apply relative overflow-hidden;
+    background: linear-gradient(
+      90deg,
+      var(--bg-secondary) 0%,
+      var(--bg-tertiary) 50%,
+      var(--bg-secondary) 100%
+    );
+    background-size: 200% 100%;
+    animation: shimmer 2.5s ease-in-out infinite;
+  }
+}
+
+/* Image Frame */
+.image-frame {
+  @apply relative overflow-hidden rounded-2xl;
+  background: linear-gradient(
+    135deg,
+    rgba(196, 165, 116, 0.2) 0%,
+    rgba(196, 165, 116, 0.05) 50%,
+    rgba(196, 165, 116, 0.2) 100%
+  );
+  padding: 2px;
+}
+
+.image-frame img {
+  @apply rounded-2xl;
+}
+
+/* Dialog/Modal Backdrop */
+.dialog-backdrop {
+  @apply fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm;
+}
+
+.dialog-content {
+  @apply relative max-h-[90vh] max-w-[90vw] overflow-auto rounded-2xl bg-bg-secondary p-6;
+}
+
+/* Drag and Drop Styles */
+.dragging {
+  @apply opacity-50;
+}
+
+.drop-zone {
+  @apply border-2 border-dashed border-text-muted/30 rounded-xl transition-all;
+}
+
+.drop-zone-active {
+  @apply border-accent-gold bg-accent-gold-dim;
+}
+
+/* History Item */
+.history-item {
+  @apply w-full text-left px-3 py-2 rounded-lg text-sm text-text-secondary hover:bg-bg-tertiary hover:text-text-primary transition-all truncate;
+}
+
+.history-item:hover {
+  @apply text-accent-gold;
+}
