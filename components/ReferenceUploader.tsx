@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback } from 'react';
+import { useCallback, useState } from 'react';
 import {
   DndContext,
   closestCenter,
@@ -18,7 +18,7 @@ import {
   horizontalListSortingStrategy,
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { Upload, X, GripVertical } from 'lucide-react';
+import { Upload, X, GripVertical, ImagePlus } from 'lucide-react';
 import { useStore } from '@/lib/store';
 import { ReferenceImage, Strength, STRENGTH_LABELS } from '@/lib/types';
 import { fileToBase64, generateId, getMimeType, imageToDataUrl } from '@/lib/image';
@@ -100,6 +100,7 @@ function SortableImage({ image, onRemove, onStrengthChange }: SortableImageProps
 
 export function ReferenceUploader() {
   const { referenceImages, setReferenceImages } = useStore();
+  const [isDragOver, setIsDragOver] = useState(false);
 
   const sensors = useSensors(
     useSensor(PointerSensor),
@@ -118,12 +119,13 @@ export function ReferenceUploader() {
     }
   };
 
-  const handleFileChange = useCallback(
-    async (e: React.ChangeEvent<HTMLInputElement>) => {
-      const files = Array.from(e.target.files || []);
+  const processFiles = useCallback(
+    async (files: File[]) => {
       const validFiles = files.filter((file) => ACCEPTED_TYPES.includes(file.type));
       const slotsAvailable = MAX_IMAGES - referenceImages.length;
       const filesToAdd = validFiles.slice(0, slotsAvailable);
+
+      if (filesToAdd.length === 0) return;
 
       const newImages: ReferenceImage[] = await Promise.all(
         filesToAdd.map(async (file) => {
@@ -139,9 +141,42 @@ export function ReferenceUploader() {
       );
 
       setReferenceImages([...referenceImages, ...newImages]);
-      e.target.value = '';
     },
     [referenceImages, setReferenceImages]
+  );
+
+  const handleFileChange = useCallback(
+    async (e: React.ChangeEvent<HTMLInputElement>) => {
+      const files = Array.from(e.target.files || []);
+      await processFiles(files);
+      e.target.value = '';
+    },
+    [processFiles]
+  );
+
+  // Handle drag and drop from outside
+  const handleDragOver = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragOver(true);
+  }, []);
+
+  const handleDragLeave = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragOver(false);
+  }, []);
+
+  const handleDrop = useCallback(
+    async (e: React.DragEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+      setIsDragOver(false);
+
+      const files = Array.from(e.dataTransfer.files);
+      await processFiles(files);
+    },
+    [processFiles]
   );
 
   const handleRemove = useCallback(
@@ -173,32 +208,27 @@ export function ReferenceUploader() {
         </span>
       </div>
 
-      <div className="flex flex-wrap gap-3">
-        <DndContext
-          sensors={sensors}
-          collisionDetection={closestCenter}
-          onDragEnd={handleDragEnd}
-        >
-          <SortableContext
-            items={referenceImages.map((img) => img.id)}
-            strategy={horizontalListSortingStrategy}
-          >
-            {referenceImages.map((image) => (
-              <SortableImage
-                key={image.id}
-                image={image}
-                onRemove={handleRemove}
-                onStrengthChange={handleStrengthChange}
-              />
-            ))}
-          </SortableContext>
-        </DndContext>
-
-        {/* Upload Button */}
-        {canAddMore && (
-          <label className="flex h-24 w-24 cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed border-text-muted/30 bg-bg-secondary/50 transition-all hover:border-accent-gold hover:bg-accent-gold-dim">
-            <Upload className="h-5 w-5 text-text-muted" />
-            <span className="text-xs text-text-muted">Add</span>
+      {/* Drop Zone */}
+      <div
+        onDragOver={handleDragOver}
+        onDragLeave={handleDragLeave}
+        onDrop={handleDrop}
+        className={`rounded-xl border-2 border-dashed p-4 transition-all ${
+          isDragOver
+            ? 'border-accent-gold bg-accent-gold/10'
+            : 'border-text-muted/20 bg-bg-secondary/30'
+        }`}
+      >
+        {referenceImages.length === 0 && !isDragOver ? (
+          // Empty state - large drop zone
+          <label className="flex cursor-pointer flex-col items-center justify-center gap-3 py-8">
+            <div className="rounded-full bg-bg-tertiary p-4">
+              <ImagePlus className="h-8 w-8 text-accent-gold" />
+            </div>
+            <div className="text-center">
+              <p className="text-sm text-text-primary">Drop images here</p>
+              <p className="mt-1 text-xs text-text-muted">or click to browse</p>
+            </div>
             <input
               type="file"
               accept={ACCEPTED_TYPES.join(',')}
@@ -207,12 +237,56 @@ export function ReferenceUploader() {
               className="hidden"
             />
           </label>
+        ) : isDragOver ? (
+          // Drag over state
+          <div className="flex flex-col items-center justify-center gap-2 py-8">
+            <Upload className="h-8 w-8 text-accent-gold animate-bounce" />
+            <p className="text-sm text-accent-gold">Drop to add images</p>
+          </div>
+        ) : (
+          // Has images - show grid with add button
+          <div className="flex flex-wrap gap-3">
+            <DndContext
+              sensors={sensors}
+              collisionDetection={closestCenter}
+              onDragEnd={handleDragEnd}
+            >
+              <SortableContext
+                items={referenceImages.map((img) => img.id)}
+                strategy={horizontalListSortingStrategy}
+              >
+                {referenceImages.map((image) => (
+                  <SortableImage
+                    key={image.id}
+                    image={image}
+                    onRemove={handleRemove}
+                    onStrengthChange={handleStrengthChange}
+                  />
+                ))}
+              </SortableContext>
+            </DndContext>
+
+            {/* Upload Button */}
+            {canAddMore && (
+              <label className="flex h-24 w-24 cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed border-text-muted/30 bg-bg-secondary/50 transition-all hover:border-accent-gold hover:bg-accent-gold/10">
+                <Upload className="h-5 w-5 text-text-muted" />
+                <span className="text-xs text-text-muted">Add</span>
+                <input
+                  type="file"
+                  accept={ACCEPTED_TYPES.join(',')}
+                  multiple
+                  onChange={handleFileChange}
+                  className="hidden"
+                />
+              </label>
+            )}
+          </div>
         )}
       </div>
 
       {referenceImages.length > 0 && (
         <p className="text-xs text-text-muted">
-          Drag to reorder. First image has highest priority.
+          Drag images to reorder. First image has highest priority.
         </p>
       )}
     </div>
