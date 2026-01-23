@@ -29,6 +29,7 @@ export async function GET(request: NextRequest) {
       referenceImages: row.reference_images || [],
       results: row.results || [],
       thumbnailB64: row.thumbnail_b64,
+      model: row.model || 'nanobanana-pro',
     }));
 
     return NextResponse.json({ entries } as HistoryResponse);
@@ -62,6 +63,7 @@ export async function POST(request: NextRequest) {
         reference_images: body.request.referenceImages,
         results: body.results,
         thumbnail_b64: body.thumbnailB64,
+        model: body.request.model || 'nanobanana-pro',
       })
       .select()
       .single();
@@ -79,6 +81,7 @@ export async function POST(request: NextRequest) {
       referenceImages: data.reference_images || [],
       results: data.results || [],
       thumbnailB64: data.thumbnail_b64,
+      model: data.model || 'nanobanana-pro',
     };
 
     return NextResponse.json({ entry } as HistoryCreateResponse);
