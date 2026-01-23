@@ -229,9 +229,9 @@ export class FalClient {
 }
 
 export function createFalClient(): FalClient {
-  const apiKey = process.env.FAL_KEY;
+  const apiKey = process.env.FAL_API_KEY;
   if (!apiKey) {
-    throw new Error('FAL_KEY is not set');
+    throw new Error('FAL_API_KEY is not set');
   }
   return new FalClient(apiKey);
 }
