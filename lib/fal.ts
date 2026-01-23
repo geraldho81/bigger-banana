@@ -8,12 +8,6 @@ interface FalUpscaleResult {
   image: { url: string };
 }
 
-interface FalQueueResponse {
-  request_id?: string;
-  status?: string;
-  error?: string;
-}
-
 const STRENGTH_TO_DENOISE: Record<Strength, number> = {
   low: 0.3,
   medium: 0.5,
@@ -38,7 +32,7 @@ const RETRY_DELAYS = [2000, 4000, 6000];
 
 export class FalClient {
   private apiKey: string;
-  private baseUrl = 'https://queue.fal.run';
+  private baseUrl = 'https://fal.run';
 
   constructor(apiKey: string) {
     this.apiKey = apiKey;
@@ -85,7 +79,7 @@ export class FalClient {
       enable_safety_checker: false,
     };
 
-    const result = await this.callFalWithRetry<FalImageResult>('fal-ai/bytedance/seedream/v4.5/text-to-image', payload);
+    const result = await this.callFal<FalImageResult>('fal-ai/bytedance/seedream/v4.5/text-to-image', payload);
     return result.images[0].url;
   }
 
@@ -109,7 +103,7 @@ export class FalClient {
       enable_safety_checker: false,
     };
 
-    const result = await this.callFalWithRetry<FalImageResult>('fal-ai/bytedance/seedream/v4.5/edit', payload);
+    const result = await this.callFal<FalImageResult>('fal-ai/bytedance/seedream/v4.5/edit', payload);
     return result.images[0].url;
   }
 
@@ -119,18 +113,17 @@ export class FalClient {
       scale,
     };
 
-    const result = await this.callFalWithRetry<FalUpscaleResult>('fal-ai/esrgan', payload);
+    const result = await this.callFal<FalUpscaleResult>('fal-ai/esrgan', payload);
     return result.image.url;
   }
 
-  private async callFalWithRetry<T>(
+  private async callFal<T>(
     endpoint: string,
     payload: Record<string, unknown>,
     attempt: number = 0
   ): Promise<T> {
     try {
-      // Submit the request
-      const submitResponse = await fetch(`${this.baseUrl}/${endpoint}`, {
+      const response = await fetch(`${this.baseUrl}/${endpoint}`, {
         method: 'POST',
         headers: {
           Authorization: `Key ${this.apiKey}`,
@@ -139,75 +132,19 @@ export class FalClient {
         body: JSON.stringify(payload),
       });
 
-      if (!submitResponse.ok) {
-        const errorText = await submitResponse.text();
-        throw new Error(`Fal API error: ${submitResponse.status} - ${errorText}`);
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`Fal API error: ${response.status} - ${errorText}`);
       }
 
-      const submitResult = (await submitResponse.json()) as T & FalQueueResponse;
-
-      // If we get a request_id, we need to poll for the result
-      if (submitResult.request_id) {
-        return await this.pollForResult<T>(endpoint, submitResult.request_id);
-      }
-
-      // If we get the result directly, return it
-      return submitResult;
+      return (await response.json()) as T;
     } catch (error) {
       if (attempt < MAX_RETRIES - 1) {
         await this.sleep(RETRY_DELAYS[attempt]);
-        return this.callFalWithRetry<T>(endpoint, payload, attempt + 1);
+        return this.callFal<T>(endpoint, payload, attempt + 1);
       }
       throw error;
     }
-  }
-
-  private async pollForResult<T>(
-    endpoint: string,
-    requestId: string
-  ): Promise<T> {
-    const statusUrl = `${this.baseUrl}/${endpoint}/requests/${requestId}/status`;
-    const resultUrl = `${this.baseUrl}/${endpoint}/requests/${requestId}`;
-
-    // Poll for up to 5 minutes
-    const maxAttempts = 60;
-    const pollInterval = 5000;
-
-    for (let i = 0; i < maxAttempts; i++) {
-      await this.sleep(pollInterval);
-
-      const statusResponse = await fetch(statusUrl, {
-        headers: {
-          Authorization: `Key ${this.apiKey}`,
-        },
-      });
-
-      if (!statusResponse.ok) {
-        continue;
-      }
-
-      const status = await statusResponse.json();
-
-      if (status.status === 'COMPLETED') {
-        const resultResponse = await fetch(resultUrl, {
-          headers: {
-            Authorization: `Key ${this.apiKey}`,
-          },
-        });
-
-        if (!resultResponse.ok) {
-          throw new Error(`Failed to fetch result: ${resultResponse.status}`);
-        }
-
-        return (await resultResponse.json()) as T;
-      }
-
-      if (status.status === 'FAILED') {
-        throw new Error(`Fal generation failed: ${status.error || 'Unknown error'}`);
-      }
-    }
-
-    throw new Error('Fal generation timed out');
   }
 
   private async fetchImageAsBase64(url: string): Promise<string> {
