@@ -132,16 +132,21 @@ export const useStore = create<AppState>((set, get) => ({
             results[0].imageData,
             results[0].mimeType
           );
-        } catch {
-          // Thumbnail creation failed, continue without it
+        } catch (e) {
+          console.error('Thumbnail creation failed:', e);
         }
       }
 
-      await fetch('/api/history', {
+      const response = await fetch('/api/history', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ request, results, thumbnailB64 }),
       });
+
+      if (!response.ok) {
+        const data = await response.json();
+        console.error('History save failed:', response.status, data.error);
+      }
     } catch (error) {
       console.error('Failed to save to history:', error);
     }
