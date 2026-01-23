@@ -8,7 +8,7 @@ import type {
   GenerationRequest,
   Model,
 } from './types';
-import { createThumbnail } from './image';
+import { createThumbnail, compressForHistory } from './image';
 
 interface AppState {
   // Form state
@@ -124,23 +124,43 @@ export const useStore = create<AppState>((set, get) => ({
   // Save to history
   saveToHistory: async (request, results) => {
     try {
-      // Create thumbnail from first result
+      // Compress images for history storage (reduces size significantly)
+      let compressedResults = results;
       let thumbnailB64: string | undefined;
+
       if (results.length > 0 && typeof window !== 'undefined') {
         try {
+          // Compress each result image
+          compressedResults = await Promise.all(
+            results.map(async (result) => {
+              const compressed = await compressForHistory(
+                result.imageData,
+                result.mimeType
+              );
+              return {
+                ...result,
+                imageData: compressed.data,
+                mimeType: compressed.mimeType,
+              };
+            })
+          );
+
+          // Create thumbnail from first compressed result
           thumbnailB64 = await createThumbnail(
-            results[0].imageData,
-            results[0].mimeType
+            compressedResults[0].imageData,
+            compressedResults[0].mimeType
           );
         } catch (e) {
-          console.error('Thumbnail creation failed:', e);
+          console.error('Image compression failed:', e);
+          // Fall back to original results
+          compressedResults = results;
         }
       }
 
       const response = await fetch('/api/history', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ request, results, thumbnailB64 }),
+        body: JSON.stringify({ request, results: compressedResults, thumbnailB64 }),
       });
 
       if (!response.ok) {

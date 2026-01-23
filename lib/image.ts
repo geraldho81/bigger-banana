@@ -109,6 +109,50 @@ export async function fileToBase64(file: File): Promise<string> {
   });
 }
 
+export async function compressForHistory(
+  imageData: string,
+  mimeType: string,
+  maxWidth: number = 1024,
+  quality: number = 0.8
+): Promise<{ data: string; mimeType: string }> {
+  const img = new Image();
+  const dataUrl = imageToDataUrl(imageData, mimeType);
+
+  return new Promise((resolve, reject) => {
+    img.onload = () => {
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+
+      if (!ctx) {
+        reject(new Error('Failed to get canvas context'));
+        return;
+      }
+
+      // Calculate dimensions (preserve aspect ratio, max width)
+      let width = img.width;
+      let height = img.height;
+
+      if (width > maxWidth) {
+        height = (height / width) * maxWidth;
+        width = maxWidth;
+      }
+
+      canvas.width = width;
+      canvas.height = height;
+
+      ctx.drawImage(img, 0, 0, width, height);
+
+      // Export as JPEG for smaller size
+      const compressedUrl = canvas.toDataURL('image/jpeg', quality);
+      const { data } = dataUrlToBase64(compressedUrl);
+      resolve({ data, mimeType: 'image/jpeg' });
+    };
+
+    img.onerror = () => reject(new Error('Failed to load image for compression'));
+    img.src = dataUrl;
+  });
+}
+
 export function downloadImage(base64Data: string, mimeType: string, filename: string) {
   const dataUrl = imageToDataUrl(base64Data, mimeType);
   const link = document.createElement('a');
