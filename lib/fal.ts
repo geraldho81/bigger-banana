@@ -85,7 +85,7 @@ export class FalClient {
       enable_safety_checker: false,
     };
 
-    const result = await this.callFalWithRetry<FalImageResult>('fal-ai/seedream-v1.0', payload);
+    const result = await this.callFalWithRetry<FalImageResult>('fal-ai/bytedance/seedream/v4.5/text-to-image', payload);
     return result.images[0].url;
   }
 
@@ -109,7 +109,7 @@ export class FalClient {
       enable_safety_checker: false,
     };
 
-    const result = await this.callFalWithRetry<FalImageResult>('fal-ai/seedream-v1.0/image-to-image', payload);
+    const result = await this.callFalWithRetry<FalImageResult>('fal-ai/bytedance/seedream/v4.5/edit', payload);
     return result.images[0].url;
   }
 
