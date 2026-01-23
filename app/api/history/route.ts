@@ -95,6 +95,37 @@ export async function POST(request: NextRequest) {
   }
 }
 
+// PATCH /api/history - Update history entry (rename)
+export async function PATCH(request: NextRequest) {
+  try {
+    const body = (await request.json()) as { id: string; prompt: string };
+
+    if (!body.id || !body.prompt) {
+      return NextResponse.json(
+        { success: false, error: 'ID and prompt are required' },
+        { status: 400 }
+      );
+    }
+
+    const supabase = createServerClient();
+
+    const { error } = await supabase
+      .from('history')
+      .update({ prompt: body.prompt })
+      .eq('id', body.id);
+
+    if (error) {
+      throw error;
+    }
+
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    console.error('History update error:', error);
+    const message = error instanceof Error ? error.message : 'Failed to update history entry';
+    return NextResponse.json({ success: false, error: message }, { status: 500 });
+  }
+}
+
 // DELETE /api/history - Delete history entry or clear all
 export async function DELETE(request: NextRequest) {
   try {
