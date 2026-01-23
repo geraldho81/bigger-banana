@@ -82,9 +82,9 @@ export class GeminiClient {
     attempt: number = 0
   ): Promise<GenerationResult | null> {
     try {
-      // Use Gemini 2.0 Flash for image generation
+      // Use Gemini 3 Pro for image generation
       const model = this.client.getGenerativeModel({
-        model: 'gemini-2.0-flash-exp',
+        model: 'gemini-3-pro-image-preview',
         generationConfig: {
           // @ts-expect-error - responseModalities is valid for imagen but not typed
           responseModalities: ['TEXT', 'IMAGE'],
@@ -132,7 +132,7 @@ export class GeminiClient {
 
   async testConnection(): Promise<boolean> {
     try {
-      const model = this.client.getGenerativeModel({ model: 'gemini-2.0-flash-exp' });
+      const model = this.client.getGenerativeModel({ model: 'gemini-3-pro-image-preview' });
       const response = await model.generateContent('Hello');
       return !!response.response.candidates;
     } catch {
