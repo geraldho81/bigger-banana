@@ -6,6 +6,7 @@ import type {
   GenerationResult,
   HistoryEntry,
   GenerationRequest,
+  Model,
 } from './types';
 import { createThumbnail } from './image';
 
@@ -15,6 +16,7 @@ interface AppState {
   aspectRatio: AspectRatio;
   resolution: Resolution;
   referenceImages: ReferenceImage[];
+  model: Model;
 
   // Generation state
   generatedResults: GenerationResult[];
@@ -26,6 +28,7 @@ interface AppState {
   setAspectRatio: (aspectRatio: AspectRatio) => void;
   setResolution: (resolution: Resolution) => void;
   setReferenceImages: (images: ReferenceImage[]) => void;
+  setModel: (model: Model) => void;
   setGeneratedResults: (results: GenerationResult[]) => void;
   setError: (error: string | null) => void;
   clearError: () => void;
@@ -44,6 +47,7 @@ export const useStore = create<AppState>((set, get) => ({
   aspectRatio: '1:1',
   resolution: '1K',
   referenceImages: [],
+  model: 'nanobanana-pro',
   generatedResults: [],
   isGenerating: false,
   error: null,
@@ -53,13 +57,14 @@ export const useStore = create<AppState>((set, get) => ({
   setAspectRatio: (aspectRatio) => set({ aspectRatio }),
   setResolution: (resolution) => set({ resolution }),
   setReferenceImages: (referenceImages) => set({ referenceImages }),
+  setModel: (model) => set({ model }),
   setGeneratedResults: (generatedResults) => set({ generatedResults }),
   setError: (error) => set({ error }),
   clearError: () => set({ error: null }),
 
   // Generate action
   generate: async () => {
-    const { prompt, aspectRatio, resolution, referenceImages } = get();
+    const { prompt, aspectRatio, resolution, referenceImages, model } = get();
 
     if (!prompt.trim()) {
       set({ error: 'Please enter a prompt' });
@@ -74,6 +79,7 @@ export const useStore = create<AppState>((set, get) => ({
         aspectRatio,
         resolution,
         referenceImages,
+        model,
       };
 
       const response = await fetch('/api/generate', {
@@ -109,6 +115,7 @@ export const useStore = create<AppState>((set, get) => ({
       aspectRatio: entry.aspectRatio,
       resolution: entry.resolution,
       referenceImages: entry.referenceImages,
+      model: entry.model || 'nanobanana-pro',
       generatedResults: entry.results,
       error: null,
     });

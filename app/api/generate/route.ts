@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createGeminiClient } from '@/lib/gemini';
+import { createFalClient } from '@/lib/fal';
 import type { GenerationRequest, GenerateResponse } from '@/lib/types';
 
 export async function POST(request: NextRequest) {
@@ -14,8 +15,14 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const client = createGeminiClient();
-    const results = await client.generate(body);
+    let results;
+    if (body.model === 'fal-seedream') {
+      const client = createFalClient();
+      results = await client.generate(body);
+    } else {
+      const client = createGeminiClient();
+      results = await client.generate(body);
+    }
 
     return NextResponse.json({ results } as GenerateResponse);
   } catch (error) {

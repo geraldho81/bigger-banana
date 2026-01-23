@@ -4,6 +4,8 @@ export type AspectRatio = '1:1' | '16:9' | '9:16' | '4:3' | '3:4' | '3:2' | '2:3
 
 export type Resolution = '1K' | '2K' | '4K';
 
+export type Model = 'nanobanana-pro' | 'fal-seedream';
+
 export interface ReferenceImage {
   id: string;
   data: string; // Base64 encoded
@@ -18,6 +20,7 @@ export interface GenerationRequest {
   aspectRatio: AspectRatio;
   resolution: Resolution;
   referenceImages: ReferenceImage[];
+  model: Model;
 }
 
 export interface GenerationResult {
@@ -35,6 +38,7 @@ export interface HistoryEntry {
   referenceImages: ReferenceImage[];
   results: GenerationResult[];
   thumbnailB64?: string;
+  model?: Model;
 }
 
 export interface GenerateResponse {
@@ -76,3 +80,8 @@ export const STRENGTH_LABELS: Record<Strength, string> = {
   medium: 'Based on style',
   high: 'Closely matching',
 };
+
+export const MODELS: { value: Model; label: string }[] = [
+  { value: 'nanobanana-pro', label: 'Nano Banana Pro' },
+  { value: 'fal-seedream', label: 'Seedream (Fal)' },
+];
