@@ -43,7 +43,7 @@ export default function Home() {
       {/* Main Content */}
       <main className="flex flex-1 flex-col overflow-hidden lg:flex-row">
         {/* Left Panel - Compose */}
-        <div className="w-full flex-shrink-0 border-b border-text-muted/10 p-6 lg:w-[400px] lg:border-b-0 lg:border-r lg:overflow-y-auto">
+        <div className="w-full flex-shrink-0 border-b border-text-muted/10 p-6 lg:w-[55%] lg:border-b-0 lg:border-r lg:overflow-y-auto">
           <div className="mb-6 flex items-start justify-between gap-4">
             <div>
               <h1 className="font-display text-3xl text-text-primary">
@@ -92,7 +92,7 @@ export default function Home() {
         </div>
 
         {/* Right Panel - Results */}
-        <div className="flex-1 overflow-y-auto p-6">
+        <div className="w-full overflow-y-auto p-6 lg:w-[45%]">
           <div className="mb-6">
             <h2 className="font-display text-xl text-text-primary">Result</h2>
           </div>
