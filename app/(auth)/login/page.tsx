@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { createBrowserClient } from '@supabase/ssr';
 
 const MODE_LABELS = {
@@ -13,7 +13,6 @@ type Mode = keyof typeof MODE_LABELS | 'confirm';
 
 export default function LoginPage() {
   const router = useRouter();
-  const searchParams = useSearchParams();
   const supabase = useMemo(
     () =>
       createBrowserClient(
