@@ -142,20 +142,13 @@ export default function LoginPage() {
           <div className="space-y-4">
             <span className="label-gold">Bigger Banana</span>
             <h1 className="font-display text-4xl text-text-primary sm:text-5xl">
-              Luxury cinema for
-              <span className="block text-accent-gold">generative imagery.</span>
+              A better workspace for
+              <span className="block text-accent-gold">AI Creatives</span>
             </h1>
             <p className="max-w-md text-base text-text-secondary sm:text-lg">
-              Step into the studio. Sign in to keep your generations, references,
-              and cinematic presets in sync across devices.
+              Create, save, and organize your generations, references, and presets
+              across devices.
             </p>
-          </div>
-
-          <div className="flex items-center gap-4 text-sm text-text-muted">
-            <div className="h-px w-12 bg-accent-gold/40" />
-            <span>Supabase-secured</span>
-            <span className="text-text-secondary">•</span>
-            <span>Private by design</span>
           </div>
         </div>
 
