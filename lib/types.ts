@@ -6,6 +6,15 @@ export type Resolution = '1K' | '2K' | '4K';
 
 export type Model = 'nanobanana-pro' | 'fal-seedream';
 
+// Media type for toggling between image and video generation
+export type MediaType = 'image' | 'video';
+
+// Video-specific types
+export type VideoModel = 'kling-2.6-pro' | 'wan-2.6' | 'veo-3.1';
+export type VideoDuration = 4 | 5 | 6 | 8 | 10 | 15;
+export type VideoResolution = '720p' | '1080p' | '4k';
+export type VideoAspectRatio = '16:9' | '9:16' | '1:1' | '4:3' | '3:4';
+
 export interface ReferenceImage {
   id: string;
   data: string; // Base64 encoded
@@ -27,18 +36,6 @@ export interface GenerationResult {
   imageData: string; // Base64 encoded
   mimeType: string;
   seedUsed?: number;
-}
-
-export interface HistoryEntry {
-  id: string;
-  createdAt: string;
-  prompt: string;
-  aspectRatio: AspectRatio;
-  resolution: Resolution;
-  referenceImages: ReferenceImage[];
-  results: GenerationResult[];
-  thumbnailB64?: string;
-  model?: Model;
 }
 
 export interface GenerateResponse {
@@ -85,3 +82,53 @@ export const MODELS: { value: Model; label: string }[] = [
   { value: 'nanobanana-pro', label: 'Nano Banana Pro' },
   { value: 'fal-seedream', label: 'Seedream (Fal)' },
 ];
+
+// Video generation types
+export interface VideoGenerationRequest {
+  prompt: string;
+  model: VideoModel;
+  duration: VideoDuration;
+  aspectRatio: VideoAspectRatio;
+  resolution?: VideoResolution;
+}
+
+export interface VideoGenerationResult {
+  videoUrl?: string;
+  videoData?: string; // Base64 encoded
+  mimeType: string;
+  duration: number;
+  hasAudio?: boolean;
+}
+
+export interface VideoJobStatus {
+  jobId: string;
+  status: 'pending' | 'processing' | 'completed' | 'failed';
+  progress?: number;
+  result?: VideoGenerationResult;
+  error?: string;
+}
+
+export interface VideoGenerateResponse {
+  result?: VideoGenerationResult;
+  jobId?: string; // For async models like Veo
+  error?: string;
+}
+
+export interface HistoryEntry {
+  id: string;
+  createdAt: string;
+  prompt: string;
+  aspectRatio: AspectRatio;
+  resolution: Resolution;
+  referenceImages: ReferenceImage[];
+  results: GenerationResult[];
+  thumbnailB64?: string;
+  model?: Model;
+  // Video-specific fields
+  mediaType?: MediaType;
+  videoModel?: VideoModel;
+  videoDuration?: VideoDuration;
+  videoAspectRatio?: VideoAspectRatio;
+  videoResolution?: VideoResolution;
+  videoResult?: VideoGenerationResult;
+}

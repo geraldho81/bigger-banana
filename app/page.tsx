@@ -6,10 +6,14 @@ import { ReferenceUploader } from '@/components/ReferenceUploader';
 import { OutputGrid } from '@/components/OutputGrid';
 import { HistoryFeed } from '@/components/HistoryFeed';
 import { GenerateButton } from '@/components/GenerateButton';
+import { MediaTypeToggle } from '@/components/MediaTypeToggle';
+import { VideoOptionsSelector } from '@/components/VideoOptionsSelector';
+import { VideoPlayer } from '@/components/VideoPlayer';
+import { GenerationProgress } from '@/components/GenerationProgress';
 import { useStore } from '@/lib/store';
 
 export default function Home() {
-  const { error, clearError } = useStore();
+  const { error, clearError, mediaType, videoResult, videoJobStatus, isGenerating } = useStore();
 
   return (
     <div className="flex min-h-screen">
@@ -22,14 +26,16 @@ export default function Home() {
       <main className="flex flex-1 flex-col overflow-hidden lg:flex-row">
         {/* Left Panel - Compose */}
         <div className="w-full flex-shrink-0 border-b border-text-muted/10 p-6 lg:w-[400px] lg:border-b-0 lg:border-r lg:overflow-y-auto">
-          <div className="mb-8">
+          <div className="mb-6">
             <h1 className="font-display text-3xl text-text-primary">
               Bigger Banana
             </h1>
             <p className="mt-1 text-sm text-text-muted">
-              AI Image Generation with Gemini 3 Pro
+              AI {mediaType === 'video' ? 'Video' : 'Image'} Generation
             </p>
           </div>
+
+          <MediaTypeToggle />
 
           {/* Error Display */}
           {error && (
@@ -48,8 +54,14 @@ export default function Home() {
 
           <div className="space-y-6">
             <PromptInput />
-            <DimensionSelector />
-            <ReferenceUploader />
+            {mediaType === 'video' ? (
+              <VideoOptionsSelector />
+            ) : (
+              <>
+                <DimensionSelector />
+                <ReferenceUploader />
+              </>
+            )}
             <GenerateButton />
           </div>
         </div>
@@ -59,7 +71,19 @@ export default function Home() {
           <div className="mb-6">
             <h2 className="font-display text-xl text-text-primary">Result</h2>
           </div>
-          <OutputGrid />
+          {mediaType === 'video' ? (
+            isGenerating ? (
+              <GenerationProgress status={videoJobStatus} isGenerating={isGenerating} />
+            ) : videoResult ? (
+              <VideoPlayer result={videoResult} />
+            ) : (
+              <div className="flex aspect-video items-center justify-center rounded-2xl bg-bg-secondary text-text-muted">
+                Generate a video to see results here
+              </div>
+            )
+          ) : (
+            <OutputGrid />
+          )}
         </div>
       </main>
 

@@ -1,6 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerClient } from '@/lib/supabase';
-import type { HistoryEntry, HistoryResponse, HistoryCreateResponse, GenerationRequest, GenerationResult } from '@/lib/types';
+import type {
+  HistoryEntry,
+  HistoryResponse,
+  HistoryCreateResponse,
+  GenerationRequest,
+  GenerationResult,
+  MediaType,
+  VideoModel,
+  VideoDuration,
+  VideoAspectRatio,
+  VideoResolution,
+  VideoGenerationResult,
+} from '@/lib/types';
 
 // GET /api/history - Get history entries
 export async function GET(request: NextRequest) {
@@ -30,6 +42,13 @@ export async function GET(request: NextRequest) {
       results: row.results || [],
       thumbnailB64: row.thumbnail_b64,
       model: row.model || 'nanobanana-pro',
+      // Video fields
+      mediaType: row.media_type || 'image',
+      videoModel: row.video_model,
+      videoDuration: row.video_duration,
+      videoAspectRatio: row.video_aspect_ratio,
+      videoResolution: row.video_resolution,
+      videoResult: row.video_result,
     }));
 
     return NextResponse.json({ entries } as HistoryResponse);
@@ -50,21 +69,40 @@ export async function POST(request: NextRequest) {
       request: GenerationRequest;
       results: GenerationResult[];
       thumbnailB64?: string;
+      // Video fields
+      mediaType?: MediaType;
+      videoModel?: VideoModel;
+      videoDuration?: VideoDuration;
+      videoAspectRatio?: VideoAspectRatio;
+      videoResolution?: VideoResolution;
+      videoResult?: VideoGenerationResult;
     };
 
     const supabase = createServerClient();
 
+    const insertData: Record<string, unknown> = {
+      prompt: body.request.prompt,
+      aspect_ratio: body.request.aspectRatio,
+      resolution: body.request.resolution,
+      reference_images: body.request.referenceImages,
+      results: body.results,
+      thumbnail_b64: body.thumbnailB64,
+      model: body.request.model || 'nanobanana-pro',
+      media_type: body.mediaType || 'image',
+    };
+
+    // Add video fields if this is a video entry
+    if (body.mediaType === 'video') {
+      insertData.video_model = body.videoModel;
+      insertData.video_duration = body.videoDuration;
+      insertData.video_aspect_ratio = body.videoAspectRatio;
+      insertData.video_resolution = body.videoResolution;
+      insertData.video_result = body.videoResult;
+    }
+
     const { data, error } = await supabase
       .from('history')
-      .insert({
-        prompt: body.request.prompt,
-        aspect_ratio: body.request.aspectRatio,
-        resolution: body.request.resolution,
-        reference_images: body.request.referenceImages,
-        results: body.results,
-        thumbnail_b64: body.thumbnailB64,
-        model: body.request.model || 'nanobanana-pro',
-      })
+      .insert(insertData)
       .select()
       .single();
 
@@ -82,6 +120,13 @@ export async function POST(request: NextRequest) {
       results: data.results || [],
       thumbnailB64: data.thumbnail_b64,
       model: data.model || 'nanobanana-pro',
+      // Video fields
+      mediaType: data.media_type || 'image',
+      videoModel: data.video_model,
+      videoDuration: data.video_duration,
+      videoAspectRatio: data.video_aspect_ratio,
+      videoResolution: data.video_resolution,
+      videoResult: data.video_result,
     };
 
     return NextResponse.json({ entry } as HistoryCreateResponse);

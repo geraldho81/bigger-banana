@@ -1,4 +1,4 @@
-import type { GenerationRequest, GenerationResult, Strength } from './types';
+import type { GenerationRequest, GenerationResult, Strength, VideoGenerationRequest, VideoGenerationResult, VideoAspectRatio, VideoResolution } from './types';
 
 interface FalImageResult {
   images: { url: string }[];
@@ -7,6 +7,24 @@ interface FalImageResult {
 interface FalUpscaleResult {
   image: { url: string };
 }
+
+interface FalVideoResult {
+  video: { url: string };
+}
+
+const VIDEO_ASPECT_RATIO_MAP: Record<VideoAspectRatio, string> = {
+  '16:9': '16:9',
+  '9:16': '9:16',
+  '1:1': '1:1',
+  '4:3': '4:3',
+  '3:4': '3:4',
+};
+
+const VIDEO_RESOLUTION_MAP: Record<VideoResolution, number> = {
+  '720p': 720,
+  '1080p': 1080,
+  '4k': 2160,
+};
 
 const STRENGTH_TO_DENOISE: Record<Strength, number> = {
   low: 0.3,
@@ -162,6 +180,69 @@ export class FalClient {
 
   private sleep(ms: number): Promise<void> {
     return new Promise((resolve) => setTimeout(resolve, ms));
+  }
+
+  // Video generation methods
+
+  async generateVideoKling(request: VideoGenerationRequest): Promise<VideoGenerationResult> {
+    const aspectRatio = VIDEO_ASPECT_RATIO_MAP[request.aspectRatio] || '16:9';
+    const duration = request.duration === 10 ? '10' : '5';
+
+    const payload = {
+      prompt: request.prompt,
+      aspect_ratio: aspectRatio,
+      duration,
+    };
+
+    const result = await this.callFal<FalVideoResult>(
+      'fal-ai/kling-video/v2.6/pro/text-to-video',
+      payload
+    );
+
+    return {
+      videoUrl: result.video.url,
+      mimeType: 'video/mp4',
+      duration: request.duration,
+      hasAudio: true, // Kling 2.6 Pro has native audio
+    };
+  }
+
+  async generateVideoWan(request: VideoGenerationRequest): Promise<VideoGenerationResult> {
+    const aspectRatio = VIDEO_ASPECT_RATIO_MAP[request.aspectRatio] || '16:9';
+    const resolution = VIDEO_RESOLUTION_MAP[request.resolution || '720p'] || 720;
+
+    // Wan duration is in frames at 24fps
+    const frames = request.duration * 24;
+
+    const payload = {
+      prompt: request.prompt,
+      aspect_ratio: aspectRatio,
+      resolution,
+      num_frames: Math.min(frames, 360), // Max 360 frames (15s at 24fps)
+    };
+
+    const result = await this.callFal<FalVideoResult>(
+      'fal-ai/wan/v2.6/text-to-video',
+      payload
+    );
+
+    return {
+      videoUrl: result.video.url,
+      mimeType: 'video/mp4',
+      duration: request.duration,
+      hasAudio: false,
+    };
+  }
+
+  async fetchVideoAsBase64(url: string): Promise<string> {
+    const response = await fetch(url);
+
+    if (!response.ok) {
+      throw new Error(`Failed to fetch video: ${response.status}`);
+    }
+
+    const arrayBuffer = await response.arrayBuffer();
+    return Buffer.from(arrayBuffer).toString('base64');
   }
 }
 

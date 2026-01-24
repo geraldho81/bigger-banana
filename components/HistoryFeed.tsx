@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState, useRef } from 'react';
-import { Clock, Trash2, MoreHorizontal, Pencil } from 'lucide-react';
+import { Clock, Trash2, MoreHorizontal, Pencil, Video, Image } from 'lucide-react';
 import { useStore } from '@/lib/store';
 import { HistoryEntry } from '@/lib/types';
 import { ConfirmDialog } from './ConfirmDialog';
@@ -147,6 +147,9 @@ function HistoryItem({ entry, onLoad, onRename, onDelete }: HistoryItemProps) {
   const [isHovered, setIsHovered] = useState(false);
   const menuButtonRef = useRef<HTMLButtonElement>(null);
 
+  const isVideo = entry.mediaType === 'video';
+  const MediaIcon = isVideo ? Video : Image;
+
   return (
     <div
       className="group relative"
@@ -158,11 +161,14 @@ function HistoryItem({ entry, onLoad, onRename, onDelete }: HistoryItemProps) {
     >
       <button
         onClick={onLoad}
-        className="history-item pr-8"
+        className="history-item flex items-center gap-2 pr-8"
         title={entry.prompt}
       >
-        {entry.prompt.slice(0, 50)}
-        {entry.prompt.length > 50 && '...'}
+        <MediaIcon className="h-3 w-3 flex-shrink-0 text-text-muted" />
+        <span className="truncate">
+          {entry.prompt.slice(0, 45)}
+          {entry.prompt.length > 45 && '...'}
+        </span>
       </button>
 
       {(isHovered || isMenuOpen) && (
