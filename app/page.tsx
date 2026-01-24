@@ -46,7 +46,7 @@ export default function Home() {
         <div className="w-full flex-shrink-0 border-b border-text-muted/10 p-6 lg:w-[400px] lg:border-b-0 lg:border-r lg:overflow-y-auto">
           <div className="mb-6 flex items-start justify-between gap-4">
             <div>
-              <h1 className="font-display text-3xl text-text-primary">
+              <h1 className="font-display text-5xl text-text-primary">
                 Bigger Banana
               </h1>
               <p className="mt-1 text-sm text-text-muted">
