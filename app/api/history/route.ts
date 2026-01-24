@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createServerClient } from '@/lib/supabase';
+import { createRouteHandlerClient } from '@/lib/supabase';
 import type {
   HistoryEntry,
   HistoryResponse,
@@ -20,11 +20,23 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const limit = parseInt(searchParams.get('limit') || '50', 10);
 
-    const supabase = createServerClient();
+    const supabase = createRouteHandlerClient();
+    const {
+      data: { user },
+      error: userError,
+    } = await supabase.auth.getUser();
+
+    if (userError || !user) {
+      return NextResponse.json(
+        { entries: [], error: 'Unauthorized' } as HistoryResponse,
+        { status: 401 }
+      );
+    }
 
     const { data, error } = await supabase
       .from('history')
       .select('*')
+      .eq('user_id', user.id)
       .order('created_at', { ascending: false })
       .limit(limit);
 
@@ -78,9 +90,21 @@ export async function POST(request: NextRequest) {
       videoResult?: VideoGenerationResult;
     };
 
-    const supabase = createServerClient();
+    const supabase = createRouteHandlerClient();
+    const {
+      data: { user },
+      error: userError,
+    } = await supabase.auth.getUser();
+
+    if (userError || !user) {
+      return NextResponse.json(
+        { entry: null as unknown as HistoryEntry, error: 'Unauthorized' } as HistoryCreateResponse,
+        { status: 401 }
+      );
+    }
 
     const insertData: Record<string, unknown> = {
+      user_id: user.id,
       prompt: body.request.prompt,
       aspect_ratio: body.request.aspectRatio,
       resolution: body.request.resolution,
@@ -152,12 +176,24 @@ export async function PATCH(request: NextRequest) {
       );
     }
 
-    const supabase = createServerClient();
+    const supabase = createRouteHandlerClient();
+    const {
+      data: { user },
+      error: userError,
+    } = await supabase.auth.getUser();
+
+    if (userError || !user) {
+      return NextResponse.json(
+        { success: false, error: 'Unauthorized' },
+        { status: 401 }
+      );
+    }
 
     const { error } = await supabase
       .from('history')
       .update({ prompt: body.prompt })
-      .eq('id', body.id);
+      .eq('id', body.id)
+      .eq('user_id', user.id);
 
     if (error) {
       throw error;
@@ -177,15 +213,33 @@ export async function DELETE(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const id = searchParams.get('id');
 
-    const supabase = createServerClient();
+    const supabase = createRouteHandlerClient();
+    const {
+      data: { user },
+      error: userError,
+    } = await supabase.auth.getUser();
+
+    if (userError || !user) {
+      return NextResponse.json(
+        { success: false, error: 'Unauthorized' },
+        { status: 401 }
+      );
+    }
 
     if (id) {
       // Delete single entry
-      const { error } = await supabase.from('history').delete().eq('id', id);
+      const { error } = await supabase
+        .from('history')
+        .delete()
+        .eq('id', id)
+        .eq('user_id', user.id);
       if (error) throw error;
     } else {
       // Clear all entries
-      const { error } = await supabase.from('history').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+      const { error } = await supabase
+        .from('history')
+        .delete()
+        .eq('user_id', user.id);
       if (error) throw error;
     }
 
