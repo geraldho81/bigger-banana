@@ -7,6 +7,7 @@ import { createBrowserClient } from '@supabase/ssr';
 const MODE_LABELS = {
   login: 'Sign in',
   signup: 'Create account',
+  reset: 'Reset password',
 } as const;
 
 type Mode = keyof typeof MODE_LABELS | 'confirm';
@@ -29,6 +30,7 @@ export default function LoginPage() {
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [resetSent, setResetSent] = useState(false);
 
   useEffect(() => {
     let isMounted = true;
@@ -46,6 +48,33 @@ export default function LoginPage() {
       isMounted = false;
     };
   }, [router, supabase]);
+
+  const handlePasswordReset = async () => {
+    setError(null);
+    setMessage(null);
+
+    if (!email) {
+      setError('Email is required.');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const { error: resetError } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/reset-password`,
+      });
+
+      if (resetError) {
+        setError(resetError.message);
+        return;
+      }
+
+      setResetSent(true);
+      setMessage('Password reset link sent. Check your email to continue.');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -135,10 +164,14 @@ export default function LoginPage() {
             <div className="flex items-center justify-between">
               <div>
                 <h2 className="font-display text-2xl text-text-primary">
-                  {mode === 'confirm' ? 'Confirm your email' : MODE_LABELS[mode]}
+                  {mode === 'confirm'
+                    ? 'Confirm your email'
+                    : mode === 'reset'
+                      ? 'Reset your password'
+                      : MODE_LABELS[mode]}
                 </h2>
               </div>
-              {mode !== 'confirm' && (
+              {mode !== 'confirm' && mode !== 'reset' && (
                 <div className="inline-flex rounded-full border border-text-muted/20 bg-bg-tertiary/60 p-1">
                   {(['login', 'signup'] as Mode[]).map((value) => (
                     <button
@@ -148,6 +181,7 @@ export default function LoginPage() {
                         setMode(value);
                         setError(null);
                         setMessage(null);
+                        setResetSent(false);
                       }}
                       className={`rounded-full px-3 py-1 text-xs font-medium uppercase tracking-[0.2em] transition-all ${
                         mode === value
@@ -190,6 +224,46 @@ export default function LoginPage() {
                     setMode('login');
                     setError(null);
                     setMessage(null);
+                    setResetSent(false);
+                  }}
+                >
+                  Back to sign in
+                </button>
+              </div>
+            ) : mode === 'reset' ? (
+              <div className="mt-6 space-y-4">
+                <div>
+                  <label className="label-gold" htmlFor="email">
+                    Email
+                  </label>
+                  <input
+                    id="email"
+                    type="email"
+                    autoComplete="email"
+                    className="input-base mt-2"
+                    placeholder="you@studio.com"
+                    value={email}
+                    onChange={(event) => setEmail(event.target.value)}
+                  />
+                </div>
+
+                <button
+                  type="button"
+                  className="btn-primary w-full"
+                  onClick={handlePasswordReset}
+                  disabled={loading}
+                >
+                  {loading ? 'Sending...' : resetSent ? 'Resend link' : 'Send reset link'}
+                </button>
+
+                <button
+                  type="button"
+                  className="btn-secondary w-full"
+                  onClick={() => {
+                    setMode('login');
+                    setError(null);
+                    setMessage(null);
+                    setResetSent(false);
                   }}
                 >
                   Back to sign in
@@ -225,6 +299,20 @@ export default function LoginPage() {
                     value={password}
                     onChange={(event) => setPassword(event.target.value)}
                   />
+                  {mode === 'login' && (
+                    <button
+                      type="button"
+                      className="mt-2 text-xs text-text-muted underline-offset-4 hover:text-accent-gold"
+                      onClick={() => {
+                        setMode('reset');
+                        setError(null);
+                        setMessage(null);
+                        setResetSent(false);
+                      }}
+                    >
+                      Forgot password?
+                    </button>
+                  )}
                 </div>
 
                 {mode === 'signup' && (

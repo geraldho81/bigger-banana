@@ -45,7 +45,9 @@ export async function middleware(request: NextRequest) {
 
   const { pathname } = request.nextUrl;
 
-  if (!user && pathname !== '/login') {
+  const isPublicPath = pathname === '/login' || pathname === '/reset-password';
+
+  if (!user && !isPublicPath) {
     const redirectUrl = request.nextUrl.clone();
     redirectUrl.pathname = '/login';
     redirectUrl.searchParams.set('redirectedFrom', pathname);
