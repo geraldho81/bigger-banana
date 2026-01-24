@@ -140,7 +140,7 @@ export default function LoginPage() {
       <div className="relative mx-auto flex min-h-screen w-full max-w-6xl flex-col items-stretch gap-10 px-6 py-12 lg:flex-row lg:items-center">
         <div className="w-full space-y-6 lg:w-1/2">
           <div className="space-y-4">
-            <span className="label-gold">Bigger Banana</span>
+            <span className="label-gold text-lg">Bigger Banana</span>
             <h1 className="font-display text-4xl text-text-primary sm:text-5xl">
               A better workspace for
               <span className="block text-accent-gold">AI Creatives</span>
