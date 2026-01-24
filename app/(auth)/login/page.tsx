@@ -134,8 +134,7 @@ export default function LoginPage() {
           <div className="auth-panel">
             <div className="flex items-center justify-between">
               <div>
-                <p className="label-gold">Access</p>
-                <h2 className="mt-2 font-display text-2xl text-text-primary">
+                <h2 className="font-display text-2xl text-text-primary">
                   {mode === 'confirm' ? 'Confirm your email' : MODE_LABELS[mode]}
                 </h2>
               </div>
